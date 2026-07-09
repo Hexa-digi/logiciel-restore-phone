@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-void-950 text-slate-100 antialiased;
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(62, 230, 224, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(138, 107, 255, 0.08), transparent 45%),
+    linear-gradient(180deg, #04060a 0%, #070b12 100%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(62, 230, 224, 0.35);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(62, 230, 224, 0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(62, 230, 224, 0.45);
+}
+
+.panel {
+  @apply relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_0_0_1px_rgba(255,255,255,0.02)];
+}
+
+.panel-glow {
+  @apply panel shadow-glow;
+}
+
+.hud-border {
+  position: relative;
+}
+.hud-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(62, 230, 224, 0.5), rgba(138, 107, 255, 0.15), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-aria-cyan to-aria-blue px-4 py-2.5 text-sm font-semibold text-void-950 shadow-glow transition hover:brightness-110 active:scale-[0.98];
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/10 active:scale-[0.98];
+}
+
+.btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-aria-rose/30 bg-aria-rose/10 px-4 py-2.5 text-sm font-medium text-aria-rose transition hover:bg-aria-rose/20;
+}
+
+.input-field {
+  @apply w-full rounded-xl border border-white/10 bg-void-900/60 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-aria-cyan/50 focus:ring-2 focus:ring-aria-cyan/20;
+}
+
+.label-field {
+  @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-400;
+}
+
+.badge {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium;
+}
+
+.nav-link {
+  @apply flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-slate-100;
+}
+
+.nav-link.active {
+  @apply bg-aria-cyan/10 text-aria-cyan shadow-[inset_0_0_0_1px_rgba(62,230,224,0.25)];
+}
