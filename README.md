@@ -19,17 +19,27 @@ Elle s'installe comme une app native sur **iPhone, iPad et Mac** depuis Safari.
 ## Stack technique
 
 - Next.js 14 (App Router, Server Actions) + TypeScript + Tailwind CSS
-- Prisma + SQLite (facilement migrable vers PostgreSQL en production)
+- Prisma + PostgreSQL
 - Authentification par cookie signé (JWT, `jose`) — compte unique
 - Anthropic SDK pour l'assistant IA
 - PWA : manifest, service worker, icônes — installable sur iOS/iPadOS/macOS
 
 ## Démarrage
 
+Il faut une base PostgreSQL disponible (locale ou distante). Le plus rapide en local :
+
+```bash
+docker run -d --name nexus-db -e POSTGRES_USER=nexus -e POSTGRES_PASSWORD=nexus \
+  -e POSTGRES_DB=nexus -p 5432:5432 postgres:16-alpine
+```
+
+Puis :
+
 ```bash
 npm install
 cp .env.example .env
-# éditez .env : renseignez AUTH_SECRET, APP_OWNER_EMAIL, APP_OWNER_PASSWORD, ANTHROPIC_API_KEY
+# éditez .env : DATABASE_URL="postgresql://nexus:nexus@localhost:5432/nexus"
+# renseignez aussi AUTH_SECRET, APP_OWNER_EMAIL, APP_OWNER_PASSWORD, ANTHROPIC_API_KEY
 npx prisma db push
 npm run db:seed
 npm run dev
@@ -42,7 +52,7 @@ mot de passe définis dans `.env`.
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | Connexion base de données (SQLite par défaut) |
+| `DATABASE_URL` | URL de connexion PostgreSQL |
 | `ANTHROPIC_API_KEY` | Clé API pour l'assistant IA NEXUS (console.anthropic.com) |
 | `AUTH_SECRET` | Chaîne aléatoire longue pour signer les sessions |
 | `APP_OWNER_EMAIL` / `APP_OWNER_PASSWORD` | Identifiants du compte (utilisés par le script de seed) |
@@ -56,34 +66,39 @@ Dans tous les cas, pensez à :
 - définir toutes les variables d'environnement listées ci-dessus sur la plateforme d'hébergement
 - choisir un `AUTH_SECRET` unique et long (ne réutilisez jamais celui d'un exemple)
 
-### Option A — Docker (recommandé pour de l'auto-hébergement)
+### Option A — Vercel (recommandé : accessible de partout, gratuit pour un usage perso)
+
+1. Créez une base Postgres gratuite sur [neon.tech](https://neon.tech) (ou Vercel Postgres,
+   Supabase...) et copiez son `DATABASE_URL`.
+2. Sur [vercel.com/new](https://vercel.com/new), importez le dépôt GitHub
+   `Hexa-digi/logiciel-restore-phone` (branche à déployer : `claude/multi-platform-crm-app-rujs1o`
+   ou `main` une fois la PR mergée).
+3. Dans les réglages du projet Vercel (Settings → Environment Variables), renseignez toutes les
+   variables du tableau ci-dessus (`DATABASE_URL`, `AUTH_SECRET`, `APP_OWNER_EMAIL`,
+   `APP_OWNER_PASSWORD`, `ANTHROPIC_API_KEY`, `COMPANY_NAME`, et les `SMTP_*` si besoin).
+4. Lancez le déploiement. Une fois en ligne, exécutez une fois (en local, avec `DATABASE_URL`
+   pointé sur la base distante) :
+   ```bash
+   npx prisma db push
+   npm run db:seed
+   ```
+   pour créer le schéma et votre compte.
+5. Ouvrez l'URL `https://<votre-projet>.vercel.app` — c'est votre app, accessible de partout.
+
+### Option B — Docker (auto-hébergement, VPS chez vous ou ailleurs)
 
 Le dépôt inclut un `Dockerfile`, un `docker-entrypoint.sh` (synchronise le schéma Prisma au
-démarrage) et un `docker-compose.yml` prêt à l'emploi avec un volume persistant pour la base
-SQLite.
+démarrage) et un `docker-compose.yml` qui embarque aussi PostgreSQL — aucune base externe requise.
 
 ```bash
 cp .env.example .env
-# éditez .env avec vos vraies valeurs (AUTH_SECRET, APP_OWNER_EMAIL, APP_OWNER_PASSWORD, ...)
+# éditez .env : AUTH_SECRET, APP_OWNER_EMAIL, APP_OWNER_PASSWORD, POSTGRES_PASSWORD, ...
 docker compose --env-file .env up --build -d
 ```
 
 L'app est alors servie sur le port 3000 du conteneur. Placez un reverse proxy (Caddy, Nginx,
-Traefik) devant pour le HTTPS et votre nom de domaine. Les données SQLite persistent dans le
-volume Docker `nexus-data` entre les redémarrages.
-
-### Option B — Vercel (ou toute plateforme serverless)
-
-Ces plateformes n'offrent pas de disque persistant : il faut donc passer à une base **PostgreSQL**
-managée (Vercel Postgres, Neon, Supabase...) avant de déployer.
-
-1. Dans `prisma/schema.prisma`, changez `provider = "sqlite"` en `provider = "postgresql"`.
-2. Définissez `DATABASE_URL` avec l'URL de connexion Postgres fournie par votre hébergeur.
-3. Poussez le dépôt sur GitHub puis importez-le sur [vercel.com/new](https://vercel.com/new),
-   ou utilisez `vercel deploy` en CLI.
-4. Renseignez toutes les variables d'environnement du tableau ci-dessus dans les réglages du
-   projet Vercel, puis lancez `npx prisma db push` une fois (localement, pointé sur la base
-   distante, ou via une commande de build) pour créer le schéma.
+Traefik) devant pour le HTTPS et votre nom de domaine. Les données Postgres persistent dans le
+volume Docker `nexus-db-data` entre les redémarrages.
 
 ### Option C — VPS classique
 

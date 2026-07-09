@@ -23,7 +23,7 @@ COPY --from=build /app/next.config.js ./next.config.js
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
-RUN mkdir -p /app/data && chown -R node:node /app
+RUN chown -R node:node /app
 USER node
 
 EXPOSE 3000
