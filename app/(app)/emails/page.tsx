@@ -4,6 +4,7 @@ import { EmailComposer } from "@/components/EmailComposer";
 import { createEmailTemplate, deleteEmailTemplate } from "@/lib/actions/emails";
 import { timeAgo } from "@/lib/format";
 import { requireUser } from "@/lib/auth";
+import { isMailConfigured } from "@/lib/mail";
 
 export default async function EmailsPage({
   searchParams,
@@ -35,6 +36,7 @@ export default async function EmailsPage({
             defaultTo={searchParams?.to}
             defaultProspectId={searchParams?.prospectId}
             companyName={user?.companyName || "Mon entreprise"}
+            smtpConfigured={isMailConfigured()}
           />
 
           <div className="panel mt-6 p-6">
@@ -44,11 +46,18 @@ export default async function EmailsPage({
             ) : (
               <ul className="divide-y divide-white/5">
                 {logs.map((l) => (
-                  <li key={l.id} className="py-2.5 text-sm">
-                    <p className="text-slate-200">{l.sujet}</p>
-                    <p className="text-xs text-slate-500">
-                      a {l.destinataire} · {timeAgo(l.createdAt)}
-                    </p>
+                  <li key={l.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                    <div>
+                      <p className="text-slate-200">{l.sujet}</p>
+                      <p className="text-xs text-slate-500">
+                        a {l.destinataire} · {timeAgo(l.createdAt)}
+                      </p>
+                    </div>
+                    {l.statut === "echec" ? (
+                      <span className="badge border-aria-rose/30 bg-aria-rose/10 text-aria-rose">Echec</span>
+                    ) : (
+                      <span className="badge border-emerald-500/30 bg-emerald-500/10 text-emerald-400">Envoye</span>
+                    )}
                   </li>
                 ))}
               </ul>

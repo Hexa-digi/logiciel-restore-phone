@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { isMailConfigured, sendMail } from "@/lib/mail";
 
 function str(formData: FormData, key: string) {
   const v = formData.get(key);
@@ -52,4 +53,56 @@ export async function logEmail(formData: FormData) {
   revalidatePath("/emails");
   revalidatePath("/prospection");
   revalidatePath("/dashboard");
+}
+
+type SendEmailPayload = {
+  destinataire: string;
+  sujet: string;
+  corps: string;
+  clientId?: string;
+  prospectId?: string;
+};
+
+export async function sendEmailNow(payload: SendEmailPayload): Promise<{ success: boolean; error?: string }> {
+  const { destinataire, sujet, corps, clientId, prospectId } = payload;
+  if (!destinataire || !sujet || !corps) {
+    return { success: false, error: "Destinataire, sujet et message sont obligatoires." };
+  }
+  if (!isMailConfigured()) {
+    return { success: false, error: "Aucun serveur SMTP configure (voir Parametres)." };
+  }
+
+  try {
+    await sendMail({ to: destinataire, subject: sujet, text: corps });
+  } catch (err) {
+    await prisma.emailLog.create({
+      data: {
+        sujet,
+        corps,
+        destinataire,
+        clientId: clientId || null,
+        prospectId: prospectId || null,
+        statut: "echec",
+      },
+    });
+    revalidatePath("/emails");
+    return { success: false, error: err instanceof Error ? err.message : "Echec de l'envoi." };
+  }
+
+  await prisma.emailLog.create({
+    data: {
+      sujet,
+      corps,
+      destinataire,
+      clientId: clientId || null,
+      prospectId: prospectId || null,
+      statut: "envoye",
+      envoyeLe: new Date(),
+    },
+  });
+
+  revalidatePath("/emails");
+  revalidatePath("/prospection");
+  revalidatePath("/dashboard");
+  return { success: true };
 }

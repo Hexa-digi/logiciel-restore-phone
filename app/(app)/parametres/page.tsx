@@ -3,10 +3,12 @@ import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { updateCompanyProfile, createNewsSource } from "@/lib/actions/settings";
 import { NewsSourceRow } from "@/components/NewsSourceRow";
+import { isMailConfigured } from "@/lib/mail";
 
 export default async function ParametresPage() {
   const [user, sources] = await Promise.all([requireUser(), prisma.newsSource.findMany({ orderBy: { categorie: "asc" } })]);
   const aiConfigured = Boolean(process.env.ANTHROPIC_API_KEY);
+  const mailConfigured = isMailConfigured();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -44,6 +46,28 @@ export default async function ParametresPage() {
             Ajoutez la variable d&apos;environnement <code className="rounded bg-white/10 px-1">ANTHROPIC_API_KEY</code> sur
             votre serveur (fichier <code className="rounded bg-white/10 px-1">.env</code>) pour activer NEXUS. Cle disponible
             sur console.anthropic.com.
+          </p>
+        )}
+      </div>
+
+      <div className="panel p-6">
+        <h2 className="mb-2 font-display text-sm font-semibold text-slate-100">Envoi d&apos;emails (SMTP)</h2>
+        <p className="text-sm text-slate-400">
+          Statut :{" "}
+          <span className={mailConfigured ? "text-emerald-400" : "text-aria-rose"}>
+            {mailConfigured ? "Serveur SMTP configure" : "Serveur SMTP non configure"}
+          </span>
+        </p>
+        {!mailConfigured && (
+          <p className="mt-2 text-xs text-slate-500">
+            Ajoutez <code className="rounded bg-white/10 px-1">SMTP_HOST</code>,{" "}
+            <code className="rounded bg-white/10 px-1">SMTP_PORT</code>,{" "}
+            <code className="rounded bg-white/10 px-1">SMTP_USER</code>,{" "}
+            <code className="rounded bg-white/10 px-1">SMTP_PASSWORD</code> et{" "}
+            <code className="rounded bg-white/10 px-1">SMTP_FROM</code> dans votre fichier{" "}
+            <code className="rounded bg-white/10 px-1">.env</code> pour pouvoir envoyer des emails directement depuis
+            NEXUS (page Emails, bouton &laquo; Envoyer maintenant &raquo;). Sans cette configuration, vous pouvez
+            toujours ouvrir vos brouillons dans votre application mail habituelle.
           </p>
         )}
       </div>
