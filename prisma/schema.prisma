@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  companyName  String?
+  createdAt    DateTime @default(now())
+}
+
+model Client {
+  id           String        @id @default(cuid())
+  nom          String
+  entreprise   String?
+  email        String?
+  telephone    String?
+  adresse      String?
+  siret        String?
+  statut       String        @default("actif") // actif, inactif, prospect
+  notes        String?
+  tags         String? // comma separated
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  devis        Devis[]
+  taches       Tache[]
+  rdvs         Rdv[]
+  emailLogs    EmailLog[]
+  prospect     Prospect?
+}
+
+model Devis {
+  id          String      @id @default(cuid())
+  numero      String      @unique
+  titre       String
+  statut      String      @default("brouillon") // brouillon, envoye, accepte, refuse
+  dateEmission DateTime   @default(now())
+  dateValidite DateTime?
+  tauxTva     Float       @default(20)
+  notes       String?
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+  lignes      DevisLigne[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model DevisLigne {
+  id          String   @id @default(cuid())
+  description String
+  quantite    Float    @default(1)
+  prixUnitaire Float   @default(0)
+  ordre       Int      @default(0)
+  devis       Devis    @relation(fields: [devisId], references: [id], onDelete: Cascade)
+  devisId     String
+}
+
+model Tache {
+  id          String    @id @default(cuid())
+  titre       String
+  description String?
+  statut      String    @default("a_faire") // a_faire, en_cours, terminee
+  priorite    String    @default("normale") // basse, normale, haute, urgente
+  dateEcheance DateTime?
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Rdv {
+  id          String   @id @default(cuid())
+  titre       String
+  lieu        String?
+  debut       DateTime
+  fin         DateTime?
+  notes       String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  createdAt   DateTime @default(now())
+}
+
+model Prospect {
+  id            String     @id @default(cuid())
+  nom           String
+  entreprise    String?
+  email         String?
+  telephone     String?
+  source        String? // LinkedIn, salon, recommandation, site web...
+  etape         String     @default("nouveau") // nouveau, contacte, relance, rdv_planifie, negociation, gagne, perdu
+  scoreInteret  Int        @default(0)
+  prochaineRelance DateTime?
+  notes         String?
+  client        Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId      String?    @unique
+  emailLogs     EmailLog[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  nom       String
+  categorie String   @default("prospection") // prospection, relance, devis, bienvenue, general
+  sujet     String
+  corps     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailLog {
+  id          String    @id @default(cuid())
+  sujet       String
+  corps       String
+  destinataire String
+  statut      String    @default("brouillon") // brouillon, envoye
+  envoyeLe    DateTime?
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  prospect    Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+  prospectId  String?
+  createdAt   DateTime  @default(now())
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String // user, assistant
+  contenu   String
+  createdAt DateTime @default(now())
+}
+
+model NewsSource {
+  id       String  @id @default(cuid())
+  nom      String
+  url      String
+  categorie String @default("tech") // tech, trading, juridique, communication
+  actif    Boolean @default(true)
+}
