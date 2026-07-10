@@ -1,11 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 import { formatDate, formatEUR } from "@/lib/format";
 import { PrintButton } from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function ImprimerDevisPage({ params }: { params: { id: string } }) {
+  const user = await requireUser();
+  if (!user) redirect("/login");
+
   const devis = await prisma.devis.findUnique({
     where: { id: params.id },
     include: { client: true, lignes: { orderBy: { ordre: "asc" } } },
